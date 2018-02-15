@@ -42,10 +42,34 @@ defmodule Cryptex.Hasher do
   @spec name(t) :: String.t
   def name(%Hasher{module: module}), do: module.name
 
+  @spec camelize(String.t()) :: String.t()
+  def camelize(string)
+
+  def camelize(""), do: ""
+  def camelize(<<?_, t::binary>>), do: camelize(t)
+  def camelize(<<h, t::binary>>), do: <<to_upper_char(h)>> <> do_camelize(t)
+
+  defp do_camelize(<<?_, ?_, t::binary>>), do: do_camelize(<<?_, t::binary>>)
+
+  defp do_camelize(<<?_, h, t::binary>>) when h >= ?a and h <= ?z,
+    do: <<to_upper_char(h)>> <> do_camelize(t)
+
+  defp do_camelize(<<?_, h, t::binary>>) when h >= ?0 and h <= ?9, do: <<h>> <> do_camelize(t)
+  defp do_camelize(<<?_>>), do: <<>>
+  defp do_camelize(<<?/, t::binary>>), do: <<?.>> <> camelize(t)
+  defp do_camelize(<<h, t::binary>>), do: <<h>> <> do_camelize(t)
+  defp do_camelize(<<>>), do: <<>>
+
+  defp to_upper_char(char) when char >= ?a and char <= ?z, do: char - 32
+  defp to_upper_char(char), do: char
+
+  defp to_lower_char(char) when char >= ?A and char <= ?Z, do: char + 32
+  defp to_lower_char(char), do: char
+  
   defp resolve_module(module) do
     case Atom.to_string(module) do
       "Elixir." <> _ -> module
-      reference -> Module.concat(__MODULE__.Algorithm, Macro.camelize(reference))
+      reference -> Module.concat(__MODULE__.Algorithm, camelize(reference))
     end
   end
 
